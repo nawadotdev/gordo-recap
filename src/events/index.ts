@@ -3,10 +3,11 @@ import { Event } from '../types';
 import { clientReady } from './clientReady';
 import { logger } from '../lib';
 import { interactionCreate } from './interactionCreate';
+import { messageCreate } from './messageCreate';
 
 const events = new Collection<string, Event>();
 
-const eventList = [clientReady, interactionCreate];
+const eventList = [clientReady, interactionCreate, messageCreate];
 
 for (const event of eventList) {
     logger.debug(`Loading event: ${event.event}`);

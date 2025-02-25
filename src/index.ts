@@ -1,4 +1,4 @@
-import { logger } from './lib';
+import { connectDatabase, logger } from './lib';
 import client from './lib/discordClient';
 import { registerEvents } from './events';
 
@@ -9,7 +9,13 @@ async function main() {
     registerEvents(client);
     logger.info('Events registered');
 
-    await client.login(process.env.DISCORD_TOKEN);
+    await connectDatabase().then(async () => {
+      logger.info('Database connected');
+      await client.login(process.env.DISCORD_TOKEN);
+    }).catch((error) => {
+      logger.error('Database connection error:', error);
+      process.exit(1);
+    })
     
   } catch (error) {
     logger.error('Application error:', error);

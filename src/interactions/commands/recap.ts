@@ -1,24 +1,7 @@
-import { Message, SlashCommandBuilder } from "discord.js";
+import { Collection, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { SlashCommand } from "../../types";
-
-type Catch = {
-    marketCap: number | null;
-    publicKey: string | null;
-};
-
-function parseMarketCap(marketCap: string | null): number | null {
-    if (!marketCap) return null;
-
-    const multipliers: { [key: string]: number } = { 'K': 1e3, 'M': 1e6, 'B': 1e9 };
-    const match = marketCap.match(/([\d,.]+)([KMB]?)/);
-
-    if (!match) return null;
-
-    let number = parseFloat(match[1].replace(/,/g, ''));
-    let multiplier = multipliers[match[2]] || 1;
-
-    return number * multiplier;
-}
+import { Call } from "../../Models/Call.model";
+import { getOhlcv, getSupply } from "../../services";
 
 export const recapCommand: SlashCommand = {
     command: new SlashCommandBuilder()
@@ -36,48 +19,90 @@ export const recapCommand: SlashCommand = {
                 )
         ),
     execute: async (interaction) => {
+
+        await interaction.deferReply({ ephemeral: true })
+
         const _time = interaction.options.getString("time");
         if (!_time) return;
 
         const time = parseInt(_time);
         const startTime = Date.now() - time * 60 * 60 * 1000;
 
-        let messageStorage: Message[] = [];
-        let lastMessageId: string | undefined;
+        const calls = await Call.find({
+            calledAt: { $gte: startTime }
+        });
 
-        while (true) {
-            const fetchedMessages = await interaction.channel?.messages.fetch({
-                limit: 100,
-                ...(lastMessageId ? { before: lastMessageId } : {}),
-            });
-
-            if (!fetchedMessages || fetchedMessages.size === 0) break;
-
-            const messagesArray = Array.from(fetchedMessages.values());
-            messageStorage.push(...messagesArray);
-
-            if (messagesArray[messagesArray.length - 1].createdTimestamp < startTime) break;
-
-            lastMessageId = messagesArray[messagesArray.length - 1].id;
+        if(calls.length === 0){
+            await interaction.editReply({ content: `No calls found for the last ${time} hours` });
+            return;
         }
 
-        messageStorage = messageStorage.filter(message => message.createdTimestamp > startTime);
+        await interaction.editReply({ content: `Creating recap for the last ${time} hours: ${calls.length} calls` });
 
-        const catches: Catch[] = [];
-
-        for (const message of messageStorage) {
-            const description = message.embeds?.[0]?.description;
-            if (!description) continue;
-
-            const mcMatch = description.match(/\*\*MC\*\*:\s*\$?([\d,.\dKMB]+)/);
-            const marketCap = mcMatch ? parseMarketCap(mcMatch[1]) : null;
-
-            const dxMatch = description.match(/\[DS\]\(<https?:\/\/dexscreener\.com\/solana\/([\w\d]+)\>/);
-            const publicKey = dxMatch ? dxMatch[1] : null;
-
-            catches.push({ marketCap, publicKey });
+        const uniqueAddresses = new Set<string>();
+        for(const call of calls){
+            uniqueAddresses.add(call.publicKey);
         }
 
-        console.log(catches);
+        const recap: any[] = [];
+
+        for(const address of uniqueAddresses){  
+            const firstCall = await Call.findOne({ publicKey: address, calledAt: { $gte: Date.now() - 7 * 24 * 60 * 60 * 1000 } }).sort({ calledAt: 1 });
+            if(!firstCall){
+                console.log("No first call found for", address)
+                continue;
+            }
+            const hours = (Date.now() - firstCall.calledAt) / (60 * 60 * 1000);
+            let ohlcv: any;
+            try{
+                ohlcv = await getOhlcv(address, (Math.ceil(hours) + 1)*12, 5)
+            }catch(err){
+                console.log("Error getting ohlcv for", address, hours, err)
+                continue;
+            }
+
+            const filteredOhlcv = ohlcv.data.filter((item: any, index: number) => {
+                if(index === 0) return true;
+                if(item.highUsdc > ohlcv.data[index - 1].highUsdc * 10) return false;
+                return true;
+            })
+
+            const highestUsdc = filteredOhlcv.reduce((max: number, current: any) => {
+                return Math.max(max, current.highUsdc);
+            }, 0);
+            
+            
+
+            const supply = await getSupply(address)
+            if(!supply){
+                console.log("No supply found for", address)
+                continue;
+            }
+
+            const ath = highestUsdc * supply
+
+            const pumpAmount = ath / firstCall.marketCap
+
+            const recapItem = {
+                symbol: firstCall.symbol,
+                address,
+                pumpAmount : pumpAmount.toFixed(2),
+                emoji : pumpAmount > 10 ? "🚀" : pumpAmount > 5 ? "💰" : pumpAmount > 2 ? "💸" : pumpAmount > 1 ? "💵" : "💵"
+            }
+
+            recap.push(recapItem)
+
+
+        }
+        const recapString = recap.sort((a, b) => b.pumpAmount - a.pumpAmount).map((item, index) => {
+            return `${item.emoji} [${item.symbol}](https://dexscreener.com/solana/${item.address}) - ${item.pumpAmount}x`
+        }).join("\n")
+
+        const embed = new EmbedBuilder()
+        .setTitle(`Recap ${time}h`)
+        .setDescription(recapString)
+        .setFooter({ text: `Powered by @nawadotdev` })
+
+        await interaction.editReply({  embeds: [embed] })
     }
-};
+}

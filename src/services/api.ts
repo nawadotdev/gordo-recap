@@ -5,8 +5,8 @@ export const getOhlcv = async (
 ) => {
 
     try{
-
-        const resp = await fetch(`https://ohlcv-plum.vercel.app/api?token=${tokenAddress}&interval=${interval}&amount=${amount}`)
+        const url = `https://ohlcv-plum.vercel.app/api?token=${tokenAddress}&interval=${interval}&amount=${amount}`
+        const resp = await fetch(url)
 
         if(!resp.ok){
             throw new Error("Failed to fetch ohlcv data")
