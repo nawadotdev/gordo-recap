@@ -1,4 +1,4 @@
-import { Events } from "discord.js";
+import { Events, Message } from "discord.js";
 import { Event } from "../types";
 import { Call } from "../Models/Call.model";
 
@@ -6,7 +6,7 @@ const monitorChannel = "1342684468191957012"
 
 export const messageCreate: Event = {
     event: Events.MessageCreate,
-    execute: async (client, message) => {
+    execute: async (client, message: Message) => {
 
         if (message.channel.id !== monitorChannel) return;
 
@@ -26,7 +26,8 @@ export const messageCreate: Event = {
             await Call.create({
                 publicKey,
                 marketCap,
-                symbol: tokenSymbol
+                symbol: tokenSymbol,
+                calledAt: message.createdTimestamp
             })
         } else {
             console.log(`${publicKey}: ${tokenSymbol} @ ${marketCap}`)

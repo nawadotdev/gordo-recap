@@ -1,4 +1,4 @@
-import { Collection, EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { Collection, EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { SlashCommand } from "../../types";
 import { Call } from "../../Models/Call.model";
 import { getOhlcv, getSupply } from "../../services";
@@ -20,7 +20,7 @@ export const recapCommand: SlashCommand = {
         ),
     execute: async (interaction) => {
 
-        await interaction.deferReply({ ephemeral: true })
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral})
 
         const _time = interaction.options.getString("time");
         if (!_time) return;
@@ -61,6 +61,8 @@ export const recapCommand: SlashCommand = {
                 continue;
             }
 
+            ohlcv.data = ohlcv.data.filter((item: any) => item.timestamp > firstCall.calledAt)
+
             const filteredOhlcv = ohlcv.data.filter((item: any, index: number) => {
                 if(index === 0) return true;
                 if(item.highUsdc > ohlcv.data[index - 1].highUsdc * 10) return false;
@@ -87,7 +89,8 @@ export const recapCommand: SlashCommand = {
                 symbol: firstCall.symbol,
                 address,
                 pumpAmount : pumpAmount.toFixed(2),
-                emoji : pumpAmount > 10 ? "🚀" : pumpAmount > 5 ? "💰" : pumpAmount > 2 ? "💸" : pumpAmount > 1 ? "💵" : "💵"
+                emoji : pumpAmount > 10 ? "🚀" : pumpAmount > 5 ? "💰" : pumpAmount > 2 ? "💸" : pumpAmount > 1 ? "💵" : "💵",
+                ath : ath
             }
 
             recap.push(recapItem)
@@ -95,7 +98,7 @@ export const recapCommand: SlashCommand = {
 
         }
         const recapString = recap.sort((a, b) => b.pumpAmount - a.pumpAmount).map((item, index) => {
-            return `${item.emoji} [${item.symbol}](https://dexscreener.com/solana/${item.address}) - ${item.pumpAmount}x`
+            return `${item.emoji} [${item.symbol}](https://dexscreener.com/solana/${item.address}) - ${item.pumpAmount}x (${formatMarketCap(item.ath)})`
         }).join("\n")
 
         const embed = new EmbedBuilder()
@@ -105,4 +108,24 @@ export const recapCommand: SlashCommand = {
 
         await interaction.editReply({  embeds: [embed] })
     }
+}
+
+
+function formatMarketCap(value: number | null): string | null {
+    if (value === null) return null;
+    if (value < 1e3) return value.toFixed(2);
+
+    const suffixes = [
+        { suffix: 'B', value: 1e9 },
+        { suffix: 'M', value: 1e6 },
+        { suffix: 'K', value: 1e3 },
+    ];
+
+    for (const { suffix, value: threshold } of suffixes) {
+        if (value >= threshold) {
+            return (value / threshold).toFixed(2).replace(/\.00$/, '') + suffix;
+        }
+    }
+
+    return value.toString();
 }
