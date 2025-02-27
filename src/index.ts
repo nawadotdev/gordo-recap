@@ -4,8 +4,6 @@ import { registerEvents } from './events';
 
 async function main() {
   try {
-    logger.info('Application started. Version: 0.1.1');
-    
     registerEvents(client);
     logger.info('Events registered');
 

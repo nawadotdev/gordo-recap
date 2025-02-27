@@ -2,13 +2,13 @@ import { Events, Message } from "discord.js";
 import { Event } from "../types";
 import { Call } from "../Models/Call.model";
 
-const monitorChannel = "1342684468191957012"
+const monitorChannel = ["1342684468191957012", "1342563621498257538"]
 
 export const messageCreate: Event = {
     event: Events.MessageCreate,
     execute: async (client, message: Message) => {
 
-        if (message.channel.id !== monitorChannel) return;
+        if (!monitorChannel.includes(message.channel.id)) return;
 
         const description = message.embeds?.[0]?.description;
         if (!description) return;
@@ -27,7 +27,8 @@ export const messageCreate: Event = {
                 publicKey,
                 marketCap,
                 symbol: tokenSymbol,
-                calledAt: message.createdTimestamp
+                calledAt: message.createdTimestamp,
+                channelId: message.channel.id
             })
         } else {
             console.log(`${publicKey}: ${tokenSymbol} @ ${marketCap}`)
