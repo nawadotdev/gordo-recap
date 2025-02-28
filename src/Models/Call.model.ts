@@ -17,6 +17,10 @@ const callSchema = new Schema<ICall>({
     calledAt: {
         type: Number,
         required: true,
+    },
+    channelId : {
+        type: String,
+        required: true,
     }
 })
 
