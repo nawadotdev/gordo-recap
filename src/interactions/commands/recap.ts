@@ -6,7 +6,7 @@ import { getOhlcv, getSupply } from "../../services";
 export const recapCommand: SlashCommand = {
     command: new SlashCommandBuilder()
         .setName("recap")
-        .setDescription("Recap")
+        .setDescription("Recap of the last calls")
         .addStringOption(option =>
             option
                 .setName("channel")
@@ -38,6 +38,8 @@ export const recapCommand: SlashCommand = {
         const _channel = interaction.options.getString("channel");
         if (!_channel) return;
 
+        console.log(_channel, _time)
+
         const time = parseInt(_time);
         const startTime = Date.now() - time * 60 * 60 * 1000;
 
@@ -45,6 +47,8 @@ export const recapCommand: SlashCommand = {
             calledAt: { $gte: startTime },
             channelId: _channel
         });
+
+        console.log(calls.length)
 
         if (calls.length === 0) {
             await interaction.editReply({ content: `No calls found for the last ${time} hours` });
@@ -120,7 +124,7 @@ export const recapCommand: SlashCommand = {
         const numberOfCalles = recap.length
         const averagePump = recap.reduce((acc, item) => acc + item.pumpAmount, 0) / numberOfCalles
 
-        
+
         const embed = new EmbedBuilder()
             .setTitle(`Recap ${time}h`)
             .setDescription(`🖥️ <#${_channel}>\n⏰ ${time}h\n🔍 ${numberOfCalles} calls\n💰 ${averagePump}x\n\n${recapString}`)
