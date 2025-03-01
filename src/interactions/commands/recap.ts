@@ -15,6 +15,7 @@ export const recapCommand: SlashCommand = {
                 .addChoices(
                     { name: "5m", value: "1342684468191957012" },
                     { name: "2h", value: "1342563621498257538" },
+                    { name: "degens", value: "1344854970960183336" }
                 )
         )
         .addStringOption(option =>

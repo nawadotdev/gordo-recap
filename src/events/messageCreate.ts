@@ -2,7 +2,7 @@ import { Events, Message } from "discord.js";
 import { Event } from "../types";
 import { Call } from "../Models/Call.model";
 
-const monitorChannel = ["1342684468191957012", "1342563621498257538"]
+const monitorChannel = ["1342684468191957012", "1342563621498257538", "1344854970960183336"]
 
 export const messageCreate: Event = {
     event: Events.MessageCreate,
