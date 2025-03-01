@@ -15,7 +15,7 @@ export const recapCommand: SlashCommand = {
                 .addChoices(
                     { name: "5m", value: "1342684468191957012" },
                     { name: "2h", value: "1342563621498257538" },
-                    { name: "degens", value: "1344854970960183336" }
+                    { name: "degen", value: "1344854970960183336" }
                 )
         )
         .addStringOption(option =>
@@ -75,6 +75,11 @@ export const recapCommand: SlashCommand = {
                 ohlcv = await getOhlcv(address, (Math.ceil(hours) + 1) * 12, 5)
             } catch (err) {
                 console.log("Error getting ohlcv for", address, hours, err)
+                continue;
+            }
+
+            if (!ohlcv) {
+                console.log("No ohlcv found for", address)
                 continue;
             }
 
