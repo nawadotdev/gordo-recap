@@ -30,7 +30,7 @@ export const recapCommand: SlashCommand = {
         ),
     execute: async (interaction) => {
 
-        await interaction.deferReply({ flags: MessageFlags.Ephemeral })
+        await interaction.deferReply()
 
         const _time = interaction.options.getString("time");
         if (!_time) return;
@@ -38,7 +38,6 @@ export const recapCommand: SlashCommand = {
         const _channel = interaction.options.getString("channel");
         if (!_channel) return;
 
-        console.log(_channel, _time)
 
         const time = parseInt(_time);
         const startTime = Date.now() - time * 60 * 60 * 1000;
@@ -48,7 +47,6 @@ export const recapCommand: SlashCommand = {
             channelId: _channel
         });
 
-        console.log(calls.length)
 
         if (calls.length === 0) {
             await interaction.editReply({ content: `No calls found for the last ${time} hours` });
@@ -121,14 +119,15 @@ export const recapCommand: SlashCommand = {
             return `${item.emoji} [${item.symbol}](https://dexscreener.com/solana/${item.address}) - ${item.pumpAmount}x (${formatMarketCap(item.ath)}) | Called <t:${Math.floor(item.firstCall / 1000)}:R> @ ${formatMarketCap(item.firstCallMarketCap)}`
         }).join("\n")
 
-        const numberOfCalles = recap.length
-        const averagePump = recap.reduce((acc, item) => acc + item.pumpAmount, 0) / numberOfCalles
+        const numberOfCalls = recap.length
+        const averagePump = recap.reduce((acc, item) => acc + Number(item.pumpAmount), 0) / numberOfCalls
 
 
         const embed = new EmbedBuilder()
             .setTitle(`Recap ${time}h`)
-            .setDescription(`🖥️ <#${_channel}>\n⏰ ${time}h\n🔍 ${numberOfCalles} calls\n💰 ${averagePump}x\n\n${recapString}`)
+            .setDescription(`🖥️ <#${_channel}>\n⏰ ${time}h\n🪙 ${recap.length} tokens\n💰 ${averagePump.toFixed(2)}x\n\n${recapString}`)
             .setFooter({ text: `Powered by @nawadotdev` })
+            .setColor(averagePump > 5 ? "Green" : averagePump > 2 ? "Yellow" : "Red")
 
         await interaction.editReply({ embeds: [embed] })
     }
