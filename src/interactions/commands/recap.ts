@@ -122,7 +122,7 @@ export const recapCommand: SlashCommand = {
 
         }
         const recapString = recap.sort((a, b) => b.pumpAmount - a.pumpAmount).map((item, index) => {
-            return `${item.emoji} [${item.symbol}](https://dexscreener.com/solana/${item.address}) - ${item.pumpAmount}x (${formatMarketCap(item.ath)}) | Called <t:${Math.floor(item.firstCall / 1000)}:R> @ ${formatMarketCap(item.firstCallMarketCap)}`
+            return `${item.emoji} [${item.symbol}](https://dexscreener.com/solana/${item.address}) - **${item.pumpAmount}x** (${formatMarketCap(item.ath)}) | Called <t:${Math.floor(item.firstCall / 1000)}:R> @ ${formatMarketCap(item.firstCallMarketCap)}`
         }).join("\n")
 
         const numberOfCalls = recap.length
@@ -131,7 +131,7 @@ export const recapCommand: SlashCommand = {
 
         const embed = new EmbedBuilder()
             .setTitle(`Recap ${time}h`)
-            .setDescription(`🖥️ <#${_channel}>\n⏰ ${time}h\n🪙 ${recap.length} tokens\n💰 ${averagePump.toFixed(2)}x\n\n${recapString}`)
+            .setDescription(`🖥️ <#${_channel}>\n⏰ ${time}h\n🪙 ${recap.length} tokens\n💰 Avg. Profit: ${averagePump.toFixed(2)}x\n\n${recapString}`)
             .setFooter({ text: `Powered by @nawadotdev` })
             .setColor(averagePump > 5 ? "Green" : averagePump > 2 ? "Yellow" : "Red")
 
