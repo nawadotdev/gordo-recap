@@ -64,7 +64,7 @@ export const recapCommand: SlashCommand = {
         const recap: any[] = [];
 
         for (const address of uniqueAddresses) {
-            const firstCall = await Call.findOne({ publicKey: address, calledAt: { $gte: Date.now() - 7 * 24 * 60 * 60 * 1000 } }).sort({ calledAt: 1 });
+            const firstCall = await Call.findOne({ publicKey: address, channelId: _channel, calledAt: { $gte: Date.now() - 7 * 24 * 60 * 60 * 1000 } }).sort({ calledAt: 1 });
             if (!firstCall) {
                 console.log("No first call found for", address)
                 continue;
@@ -121,21 +121,46 @@ export const recapCommand: SlashCommand = {
 
 
         }
-        const recapString = recap.sort((a, b) => b.pumpAmount - a.pumpAmount).map((item, index) => {
-            return `${item.emoji} [${item.symbol}](https://dexscreener.com/solana/${item.address}) - **${item.pumpAmount}x** (${formatMarketCap(item.ath)}) | Called <t:${Math.floor(item.firstCall / 1000)}:R> @ ${formatMarketCap(item.firstCallMarketCap)}`
-        }).join("\n")
+        const sortedRecaps = recap.sort((a, b) => b.pumpAmount - a.pumpAmount)
+
+        const strings = []
+
+        let embedStr = ""
+        for(let i = 0; i<sortedRecaps.length; i++){
+            const item = sortedRecaps[i]
+            embedStr += `${item.emoji} [${item.symbol}](https://dexscreener.com/solana/${item.address}) - **${item.pumpAmount}x** (${formatMarketCap(item.ath)}) | Called <t:${Math.floor(item.firstCall / 1000)}:R> @ ${formatMarketCap(item.firstCallMarketCap)}\n`
+
+            if (embedStr.length > 3000 || i === sortedRecaps.length - 1) {
+                strings.push(embedStr)
+                embedStr = ""
+            }
+
+        }
 
         const numberOfCalls = recap.length
         const averagePump = recap.reduce((acc, item) => acc + Number(item.pumpAmount), 0) / numberOfCalls
 
 
-        const embed = new EmbedBuilder()
-            .setTitle(`Recap ${time}h`)
-            .setDescription(`🖥️ <#${_channel}>\n⏰ ${time}h\n🪙 ${recap.length} tokens\n💰 Avg. Profit: ${averagePump.toFixed(2)}x\n\n${recapString}`)
-            .setFooter({ text: `Powered by @nawadotdev` })
-            .setColor(averagePump > 5 ? "Green" : averagePump > 2 ? "Yellow" : "Red")
+        for (let i = 0; i < strings.length; i++) {
+            if (i === 0) {
+                const embed = new EmbedBuilder()
+                    .setTitle(`Recap ${time}h`)
+                    .setDescription(`🖥️ <#${_channel}>\n⏰ ${time}h\n🪙 ${recap.length} tokens\n💰 Avg. Profit: ${averagePump.toFixed(2)}x\n\n${strings[i]}`)
+                    .setFooter({ text: `Powered by @nawadotdev` })
+                    .setColor(averagePump > 5 ? "Green" : averagePump > 2 ? "Yellow" : "Red")
 
-        await interaction.editReply({ embeds: [embed] })
+                await interaction.editReply({ embeds: [embed] })
+            } else {
+                const embed = new EmbedBuilder()
+                    .setDescription(`${strings[i]}`)
+                    .setFooter({ text: `Powered by @nawadotdev` })
+                    .setColor(averagePump > 5 ? "Green" : averagePump > 2 ? "Yellow" : "Red")
+
+                    await interaction.followUp({ embeds: [embed] })
+            }
+
+        }
+
     }
 }
 
