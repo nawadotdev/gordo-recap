@@ -22,17 +22,17 @@ export const messageCreate: Event = {
         const tokenMatch = description.match(/‼️ 🟢 MULTI BUY \*\*(\w+)\*\*/);
         const tokenSymbol = tokenMatch ? tokenMatch[1] : null;
 
-        // if (publicKey && marketCap && tokenSymbol) {
-        //     await Call.create({
-        //         publicKey,
-        //         marketCap,
-        //         symbol: tokenSymbol,
-        //         calledAt: message.createdTimestamp,
-        //         channelId: message.channel.id
-        //     })
-        // } else {
-        //     console.log(`${publicKey}: ${tokenSymbol} @ ${marketCap}`)
-        // }
+        if (publicKey && marketCap && tokenSymbol) {
+            await Call.create({
+                publicKey,
+                marketCap,
+                symbol: tokenSymbol,
+                calledAt: message.createdTimestamp,
+                channelId: message.channel.id
+            })
+        } else {
+            console.log(`${publicKey}: ${tokenSymbol} @ ${marketCap}`)
+        }
 
     }
 }

@@ -2,6 +2,12 @@ import { Collection, EmbedBuilder, MessageFlags, SlashCommandBuilder } from "dis
 import { SlashCommand } from "../../types";
 import { Call } from "../../Models/Call.model";
 import { getOhlcv, getSupply } from "../../services";
+import { recapCooldown } from "../../utils/Cooldown/recap";
+
+const permittedGuilds = [
+    "1175938266718031962",
+    "1344749364051968001"
+]
 
 export const recapCommand: SlashCommand = {
     command: new SlashCommandBuilder()
@@ -30,6 +36,20 @@ export const recapCommand: SlashCommand = {
                 )
         ),
     execute: async (interaction) => {
+
+        let guild = interaction.guild;
+
+        if (!guild) {
+            await interaction.reply({ content: `This command can only be used in a server`, flags: MessageFlags.Ephemeral});
+            return;
+        }
+
+        if (recapCooldown.isOnCooldown(guild.id) && permittedGuilds.includes(guild.id)) {
+            await interaction.reply({ content: `Server is on cooldown. Please wait ${recapCooldown.isOnCooldown(guild.id)} minutes before using the command again. (Server based cooldown)`, flags: MessageFlags.Ephemeral });
+            return;
+        }
+
+        recapCooldown.addCooldown(guild.id);
 
         await interaction.deferReply()
 
