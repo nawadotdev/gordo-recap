@@ -1,13 +1,9 @@
-import { Collection, EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { SlashCommand } from "../../types";
 import { Call } from "../../Models/Call.model";
 import { getOhlcv, getSupply } from "../../services";
 import { recapCooldown } from "../../utils/Cooldown/recap";
-
-const permittedGuilds = [
-    "1175938266718031962",
-    "1344749364051968001"
-]
+import { permittedGuilds } from "../../constants/guilds";
 
 export const recapCommand: SlashCommand = {
     command: new SlashCommandBuilder()
@@ -44,7 +40,7 @@ export const recapCommand: SlashCommand = {
             return;
         }
 
-        if (recapCooldown.isOnCooldown(guild.id) && permittedGuilds.includes(guild.id)) {
+        if (recapCooldown.isOnCooldown(guild.id) && !permittedGuilds.includes(guild.id)) {
             await interaction.reply({ content: `Server is on cooldown. Please wait ${recapCooldown.isOnCooldown(guild.id)} minutes before using the command again. (Server based cooldown)`, flags: MessageFlags.Ephemeral });
             return;
         }
