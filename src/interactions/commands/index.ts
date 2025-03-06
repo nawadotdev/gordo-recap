@@ -5,5 +5,8 @@ import { checkCommand } from "./check";
 
 export const commands = new Collection<string, SlashCommand>();
 
+export const adminCommands = new Collection<string, SlashCommand>();
+
 commands.set(recapCommand.command.name, recapCommand);
-//commands.set(checkCommand.command.name, checkCommand);
+
+adminCommands.set(checkCommand.command.name, checkCommand);
