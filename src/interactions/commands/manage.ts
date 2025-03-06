@@ -40,7 +40,7 @@ export const manageCommand: SlashCommand = {
         const subcommand = interaction.options.getSubcommand();
 
         if (subcommand === "add") {
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             let guildId = interaction.options.getString("guild");
 
@@ -71,7 +71,7 @@ export const manageCommand: SlashCommand = {
 
             await interaction.editReply({ content: `The guild ${guild?.name} has been added to the bot` });
         } else if (subcommand === "remove") {
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             let guildId = interaction.options.getString("guild");
 
@@ -88,7 +88,7 @@ export const manageCommand: SlashCommand = {
             await subscriptionService.removeSubscription(guildId);
             await interaction.editReply({ content: `The guild ${guildId} has been removed from the bot`});
         }else if(subcommand === "list"){
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const guilds = await subscriptionService.getSubscriptions();
             await interaction.editReply({ content: `The guilds that are subscribed to the bot are:\n${guilds.map(guild => guild.guildId).join("\n")}`});
         }

@@ -47,7 +47,7 @@ export const recapCommand: SlashCommand = {
 
         recapCooldown.addCooldown(guild.id);
 
-        await interaction.deferReply()
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const _time = interaction.options.getString("time");
         if (!_time) return;
