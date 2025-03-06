@@ -1,2 +1,2 @@
 export * from "./registerGuildApplicationCommands";
-export * from "./fetchGuildApplicationCommands";
+export * from "./registerApplicationCommands";

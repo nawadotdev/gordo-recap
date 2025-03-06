@@ -1,7 +1,7 @@
 import { Collection, Events } from "discord.js";
 import { Event } from "../types";
 import { logger } from "../lib";
-import {fetchGuildApplicationCommands, registerGuildApplicationCommands} from "../utils";
+import { registerGuildApplicationCommands} from "../utils";
 import { adminCommands, commands } from "../interactions";
 import { registerApplicationCommands } from "../utils/Commands/registerApplicationCommands";
 import { permittedGuilds } from "../constants/guilds";
