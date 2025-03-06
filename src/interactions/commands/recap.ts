@@ -64,17 +64,20 @@ export const recapCommand: SlashCommand = {
         const recap: any[] = [];
 
         for (const address of uniqueAddresses) {
+            console.log("Processing", address)
             const firstCall = await Call.findOne({ publicKey: address, channelId: _channel, calledAt: { $gte: Date.now() - 7 * 24 * 60 * 60 * 1000 } }).sort({ calledAt: 1 });
             if (!firstCall) {
                 console.log("No first call found for", address)
                 continue;
             }
-            const hours = (Date.now() - firstCall.calledAt) / (60 * 60 * 1000);
+            const aMinuteBeforeFirstCall = firstCall.calledAt - 60 * 1000;
+            const now = Date.now();
+            const minutesBetween = Math.floor((now - aMinuteBeforeFirstCall) / (60 * 1000));
             let ohlcv: any;
             try {
-                ohlcv = await getOhlcv(address, (Math.ceil(hours) + 1) * 12, 5)
+                ohlcv = await getOhlcv(address, minutesBetween+5, 1, firstCall.calledAt)
             } catch (err) {
-                console.log("Error getting ohlcv for", address, hours, err)
+                console.log("Error getting ohlcv for", address, minutesBetween, err)
                 continue;
             }
 
@@ -83,18 +86,24 @@ export const recapCommand: SlashCommand = {
                 continue;
             }
 
-            ohlcv.data = ohlcv.data.filter((item: any) => item.timestamp > firstCall.calledAt)
+            let point = 0
+            for (let i = 0; i < ohlcv.data.length; i++) {
+                if (ohlcv.data[i].timestamp > firstCall.calledAt) {
+                    point = i
+                    break
+                }
+            }
 
-            const filteredOhlcv = ohlcv.data.filter((item: any, index: number) => {
-                if (index === 0) return true;
-                if (item.highUsdc > ohlcv.data[index - 1].highUsdc * 10) return false;
-                return true;
-            })
+            const filteredOhlcv = ohlcv.data.slice(point > 0 ? point-1 : 0)
 
-            const highestUsdc = filteredOhlcv.reduce((max: number, current: any) => {
-                return Math.max(max, current.highUsdc);
-            }, 0);
-
+            let highestUsdc = 0
+            let highestUsdcTimestamp = 0
+            for (let i = 0; i < filteredOhlcv.length; i++) {
+                if (filteredOhlcv[i].highUsdc > highestUsdc) {
+                    highestUsdc = filteredOhlcv[i].highUsdc
+                    highestUsdcTimestamp = filteredOhlcv[i].timestamp
+                }
+            }
 
 
             const supply = await getSupply(address)
@@ -114,7 +123,8 @@ export const recapCommand: SlashCommand = {
                 emoji: pumpAmount > 10 ? "🚀" : pumpAmount > 5 ? "💰" : pumpAmount > 2 ? "💸" : pumpAmount > 1 ? "💵" : "💵",
                 ath: ath,
                 firstCall: firstCall.calledAt,
-                firstCallMarketCap: firstCall.marketCap
+                firstCallMarketCap: firstCall.marketCap,
+                athTimestamp: highestUsdcTimestamp // can be used
             }
 
             recap.push(recapItem)
@@ -126,7 +136,7 @@ export const recapCommand: SlashCommand = {
         const strings = []
 
         let embedStr = ""
-        for(let i = 0; i<sortedRecaps.length; i++){
+        for (let i = 0; i < sortedRecaps.length; i++) {
             const item = sortedRecaps[i]
             embedStr += `${item.emoji} [${item.symbol}](https://dexscreener.com/solana/${item.address}) - **${item.pumpAmount}x** (${formatMarketCap(item.ath)}) | Called <t:${Math.floor(item.firstCall / 1000)}:R> @ ${formatMarketCap(item.firstCallMarketCap)}\n`
 
@@ -156,7 +166,7 @@ export const recapCommand: SlashCommand = {
                     .setFooter({ text: `Powered by @nawadotdev` })
                     .setColor(averagePump > 5 ? "Green" : averagePump > 2 ? "Yellow" : "Red")
 
-                    await interaction.followUp({ embeds: [embed] })
+                await interaction.followUp({ embeds: [embed] })
             }
 
         }
