@@ -1,6 +1,7 @@
 import { Client, ClientApplication, Collection, REST, Routes, Snowflake } from "discord.js";
 import { SlashCommand } from "../../types";
 import "dotenv/config";
+import { logger } from "../../lib";
 
 export async function registerGuildApplicationCommands(
     client: Client,
@@ -22,14 +23,20 @@ export async function registerGuildApplicationCommands(
 
     const guilds = guildIds.length > 0 ? guildIds : (client.guilds.cache.map(g => g.id));
     
-    await Promise.all(
+    await Promise.allSettled(
         guilds.map(async (guild) => {
-            await rest.put(
-                Routes.applicationGuildCommands((client.application as ClientApplication).id, guild),
-                {
-                    body: commands.map(c => c.command.toJSON())
-                }
-            )
+            logger.debug(`Registering guild application commands for guild ${guild}`);
+            try{
+                await rest.put(
+                    Routes.applicationGuildCommands((client.application as ClientApplication).id, guild),
+                    {
+                        body: commands.map(c => c.command.toJSON())
+                    }
+                )
+                logger.debug(`Guild application commands registered for guild ${guild}`);
+            }catch(error){
+                logger.error(`Error registering guild application commands for guild ${guild}: ${error}`);
+            }
         })
     )
     
