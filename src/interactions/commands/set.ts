@@ -1,6 +1,5 @@
-import { Guild, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import { SlashCommand } from "../../types";
-import { permissionCheck } from "../../utils/Commands/permittionCheck";
 import { subscriptionService } from "../../services/subscriptions";
 import { subscriptionUtils } from "../../utils/Subscriptions/sub";
 import { discordService } from "../../services/discord";

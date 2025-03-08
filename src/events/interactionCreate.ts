@@ -1,6 +1,6 @@
 import { BaseInteraction, Client, Events, MessageFlags } from "discord.js";
 import { Event } from "../types";
-import { commands, components } from "../interactions";
+import { adminCommands, commands, components } from "../interactions";
 import { logger } from "../lib";
 
 export const interactionCreate : Event = {
@@ -8,7 +8,7 @@ export const interactionCreate : Event = {
     execute: async (client: Client, interaction: BaseInteraction) => {
 
         if(interaction.isChatInputCommand()){
-            const command = commands.get(interaction.commandName);
+            const command = commands.get(interaction.commandName) || adminCommands.get(interaction.commandName);
 
             if(!command) {
                 logger.error(`No command matching ${interaction.commandName} was found.`);
